@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 )
 
 type recentMessages struct {
@@ -170,5 +171,5 @@ func main() {
 	http.Handle("/connect/", b)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./"))))
 	http.HandleFunc("/clientMsg/", b.clientMsg)
-	http.ListenAndServe(":5555", nil)
+	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 }
