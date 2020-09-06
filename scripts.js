@@ -24,7 +24,7 @@ source.onmessage = function(e) {
 function clientMsg(){
     var msg = String(dispStack + "=" + eval(dispStack));
     console.log(msg);
-    fetch('http://calcrulator.herokuapp.com/clientMsg/', {
+    fetch('http://calccrulator.herokuapp.com/clientMsg/', {
         method: 'POST',
         body: msg
     })

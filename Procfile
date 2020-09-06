@@ -1,1 +1,1 @@
-web: calcrulator
+web: calcrulator app:server
