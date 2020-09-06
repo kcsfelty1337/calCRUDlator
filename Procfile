@@ -1,1 +1,1 @@
-web: go run calccrulator.go
+web: calcCRUlator
