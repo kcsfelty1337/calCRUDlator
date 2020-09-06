@@ -166,8 +166,9 @@ func main() {
 	}
 
 	b.Start()
-	http.Handle("/connect/", b)
-	http.HandleFunc("/clientMsg/", b.clientMsg)
 	http.Handle("/", http.HandlerFunc(handler))
+	http.Handle("/connect/", b)
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./"))))
+	http.HandleFunc("/clientMsg/", b.clientMsg)
 	http.ListenAndServe(":5555", nil)
 }

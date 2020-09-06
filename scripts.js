@@ -1,39 +1,54 @@
-
 var dispStack = '';
-
-
-// Create a new HTML5 EventSource
-var source = new EventSource('/events/');
-
-// Create a callback for when a new message is received.
+var resultQueue = [
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    ''
+]
+var source = new EventSource('/connect/');
 source.onmessage = function(e) {
+    console.log(JSON.parse(e.data));
+    results = JSON.parse(e.data);
+    for (i = 9; i >= 0; i--){
+        document.getElementById('r'+i).innerHTML = results['result'+i];
+    }
 
-    // Append the `data` attribute of the message to the DOM.
-    document.body.innerHTML += e.data + '<br>';
 };
 
 function clientMsg(){
-    //var dispStack = '1+2+3*4';
     var msg = String(dispStack + "=" + eval(dispStack));
     console.log(msg);
-    fetch('http://localhost:8000/clientMsg/', {
+    fetch('http://10.0.0.153:5555/clientMsg/', {
         method: 'POST',
         body: msg
     })
         .then(console.log(msg))
+    dispStack = eval(dispStack);
+    document.getElementById('screen').innerHTML = dispStack;
 }
-
 function push(s){
-    dispStack += s;
-    document.getElementById('disp').innerHTML = dispStack;
+    if (dispStack =='0'){
+        dispStack = s;
+    } else {
+        dispStack += s;
+    }
+    document.getElementById('screen').innerHTML = dispStack.substring(0,9);
 }
-
 function pop(){
-    dispStack = dispStack.slice(0, dispStack.length-1);
-    document.getElementById('disp').innerHTML = dispStack;
+    dispStack = dispStack.slice(0, dispStack.length - 1);
+    console.log("'"+dispStack+"'");
+    if (dispStack == ''){
+        dispStack = '0';
+    };
+    document.getElementById('screen').innerHTML = dispStack.substring(0,9);
 }
-
 function cls(){
     dispStack = '';
-    document.getElementById('disp').innerHTML = '0';
+    document.getElementById('screen').innerHTML = '0';
 }

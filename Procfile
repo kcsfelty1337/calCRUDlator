@@ -1,1 +1,1 @@
-web: bin/calcrulator
+web: calcrulator
