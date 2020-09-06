@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to the CalCRUlator</title>
+    <style>
+    body{
+        font-family: monospace;
+        font-size: 85px;
+        background-color: #333333;
+    }
+    #calcBody{
+        background-color: slategrey;
+        padding: 10px;
+        max-width: 80%;
+        min-width: 900px;
+        margin: auto;
+        border-radius: 5px;
+
+    }
+    #screenBorder{
+        background-color: black;
+        padding: 5px;
+        width: auto;
+    }
+    #screen{
+        background-color: #83876C;
+        width: auto;
+        font-size: 110px;
+        text-align: right;
+        font-family: monospace;
+        height: auto;
+        padding-right: 10px;
+    }
+    #buttonArea{
+        background-color: #2A2720;
+        padding: 5px;
+        overflow: auto;
+
+    }
+    #numbers{
+        background-color: #2A2720;
+        display: block;
+        padding: 5px;
+        float: left;
+        width: 60%;
+        margin: auto;
+
+    }
+    .buttonRow{
+        background-color: #2A2720;
+        padding: 5px;
+        margin: 5px;
+        align-content: center;
+        display: flex;
+    }
+    .button{
+        user-select: none;
+        background-color: ivory;
+        display: inline-block;
+        padding: 20px;
+        min-height: 85px;
+        min-width: 85px;
+        text-align: center;
+        margin: 10px;
+        border-radius: 7px;
+    }
+    .button:active{
+        background-color: lightgrey;
+
+    }
+    .button:hover{
+        cursor: pointer;
+    }
+    #buttonPanel{
+        background-color: #2A2720;
+        display: block;
+        padding: 5px;
+        float: left;
+    }
+    #resultArea{
+        background-color: slategrey;
+        padding: 5px;
+        font-size: 20px;
+    }
+    .result{
+        background-color: #83876C;
+        padding: 5px;
+    }
+    #e{
+        height: 275px;
+        width: 230px;
+        font-size: 250px;
+        margin: auto;
+
+    }
+    #c{
+        background-color: maroon;
+    }
+    #c:active{
+        background-color: #600000;
+    }
+    </style>
+</head>
+<body>
+    <script type="text/javascript">
+        var dispStack = '';
+        var resultQueue = [
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            ''
+        ]
+        var source = new EventSource('/connect/');
+        source.onmessage = function(e) {
+            console.log(JSON.parse(e.data));
+            results = JSON.parse(e.data);
+            for (i = 9; i >= 0; i--){
+                document.getElementById('r'+i).innerHTML = results['result'+i];
+            }
+
+        };
+
+        function clientMsg(){
+            var msg = String(dispStack + "=" + eval(dispStack));
+            console.log(msg);
+            fetch('http://10.0.0.153:5555/clientMsg/', {
+                method: 'POST',
+                body: msg
+            })
+                .then(console.log(msg))
+            dispStack = eval(dispStack);
+            document.getElementById('screen').innerHTML = dispStack;
+        }
+        function push(s){
+            if (dispStack =='0'){
+                dispStack = s;
+            } else {
+                dispStack += s;
+            }
+                document.getElementById('screen').innerHTML = dispStack.substring(0,9);
+        }
+        function pop(){
+            dispStack = dispStack.slice(0, dispStack.length - 1);
+            console.log("'"+dispStack+"'");
+            if (dispStack == ''){
+                dispStack = '0';
+            };
+            document.getElementById('screen').innerHTML = dispStack.substring(0,9);
+        }
+        function cls(){
+            dispStack = '';
+            document.getElementById('screen').innerHTML = '0';
+        }
+    </script>
+    <div id="calcBody">
+        <div id="screenBorder">
+            <div id="screen">
+                0
+            </div>
+        </div>
+        <div id="buttonArea">
+            <div id="numbers">
+                <div class="buttonRow">
+                    <div class="button" id="1" onclick="push(1)">1</div>
+                    <div class="button" id="2" onclick="push(2)">2</div>
+                    <div class="button" id="3" onclick="push(3)">3</div>
+                </div>
+                <div class="buttonRow">
+                    <div class="button" id="4" onclick="push(4)">4</div>
+                    <div class="button" id="5" onclick="push(5)">5</div>
+                    <div class="button" id="6" onclick="push(6)">6</div>
+                </div>
+                <div class="buttonRow">
+                    <div class="button" id="7" onclick="push(7)">7</div>
+                    <div class="button" id="8" onclick="push(8)">8</div>
+                    <div class="button" id="9" onclick="push(9)">9</div>
+                </div>
+                <div class="buttonRow">
+                    <div class="button" id="b" onclick="pop()">←</div>
+                    <div class="button" id="0" onclick="push(1)">0</div>
+                    <div class="button" id="c" onclick="cls()">C</div>
+                </div>
+            </div>
+            <div id="buttonPanel">
+                <div class="buttonRow">
+                    <div class="button" id="a" onclick="push('+')">+</div>
+                    <div class="button" id="s" onclick="push('-')">-</div>
+                </div>
+                <div class="buttonRow">
+                    <div class="button" id="m" onclick="push('*')">x</div>
+                    <div class="button" id="d" onclick="push('/')">%</div>
+                </div>
+                <div class="buttonRow">
+                    <div class="button" id="e" onclick="clientMsg()">=</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div id="resultArea">
+        <div class="result" id="rHeader">Last 10 Calculations:</div>
+        <div class="result" id="r0"></div>
+        <div class="result" id="r1"></div>
+        <div class="result" id="r2"></div>
+        <div class="result" id="r3"></div>
+        <div class="result" id="r4"></div>
+        <div class="result" id="r5"></div>
+        <div class="result" id="r6"></div>
+        <div class="result" id="r7"></div>
+        <div class="result" id="r8"></div>
+        <div class="result" id="r9"></div>
+    </div>
+</body>
+</html>
