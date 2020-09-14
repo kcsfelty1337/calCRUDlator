@@ -3,6 +3,8 @@ let source = new EventSource('/connect/');
 let userID = window.prompt("Please enter your name.");
 let updating = false;
 let updateID = 0;
+let url = "http://calcrudlator.herokuapp.com";
+//let url = "http://localhost:8080";
 source.onmessage = function(e) {
     readMsg(e);
 }
@@ -10,7 +12,7 @@ function createMsg(){
     let result = String(eval(dispStack)).substr(0, 12)
     let entry = String(dispStack + "=" + result);
     if (updating){
-        fetch('http://calcrudlator.herokuapp.com/update/', {
+        fetch(url+'/update/', {
             method: 'POST',
             body: JSON.stringify({
                 messageID: updateID,
@@ -24,7 +26,7 @@ function createMsg(){
         updating = false;
         updateID = 0;
     } else {
-        fetch('http://calcrudlator.herokuapp.com/create/', {
+        fetch(url+'/create/', {
             method: 'POST',
             body: JSON.stringify({
                 userID: userID,
@@ -58,7 +60,7 @@ function updateMsg(rowID){
 }
 function deleteMsg(rowID){
     console.log(document.getElementById('row'+rowID+'messageID').innerHTML)
-    fetch('http://calcrudlator.herokuapp.com/delete/', {
+    fetch(url+'/delete/', {
         method: 'POST',
         body: JSON.stringify({
             messageID: parseInt(document.getElementById('row'+rowID+'messageID').innerHTML,10)
