@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 	"os"
 	"time"
 )
@@ -99,14 +99,13 @@ func (c *Crudsql) DeleteMsg(messageID uint) string {
 	return ("Row deleted")
 }
 func (c *Crudsql) GetConnection(username string, password string, dbname string) {
-	con, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL")) // for Heroku hosting
-
-	//con := fmt.Sprintf("user=%1s password=%2s dbname=%3s sslmode=disable", username, password, dbname) // for local development
-	//connect, err := pgx.Connect(context.Background(), con)
+	conString := fmt.Sprintf("user=%1s password=%2s dbname=%3s sslmode=disable", username, password, dbname) // for local development
+	//conString := fmt.Sprintf("user=%1s password=%2s dbname=%3s sslmode=disable", username, password, os.Getenv("DATABASE_URL")) // for local development
+	connect, err := pgx.Connect(context.Background(), conString)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
 	}
-	c.Con = *con
+	c.Con = *connect
 }

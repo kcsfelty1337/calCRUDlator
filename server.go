@@ -1,9 +1,9 @@
 package main
 
 import (
-	"calCRUDlator/crudsql"
 	"encoding/json"
 	"fmt"
+	"github.com/kcsfelty1337/calCRUDlator/crudsql"
 	"html/template"
 	"log"
 	"net/http"
@@ -172,6 +172,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	t, err := template.ParseFiles("index.html")
 	if err != nil {
+		fmt.Println(err)
 		log.Fatal("Please remember to have an index.html!")
 
 	}
@@ -193,10 +194,16 @@ func main() {
 
 	b.sqldriver.GetConnection("yourname", "yourpassword", "postgres")
 
+	fmt.Println(os.Getenv("PORT"))
+	fmt.Println(os.Getenv("DATABSE_URL"))
 	b.Start()
 	http.Handle("/", http.HandlerFunc(handler))
 	http.Handle("/connect/", b)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./"))))
+
+	fmt.Println(http.Dir("./"))
+	path, _ := os.Getwd()
+	fmt.Println(path)
 	http.HandleFunc("/create/", b.createMsg)
 	http.HandleFunc("/read/", b.readMsg)
 	http.HandleFunc("/update/", b.updateMsg)
