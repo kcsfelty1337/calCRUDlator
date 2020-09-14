@@ -1,44 +1,88 @@
 var dispStack = '';
-var resultQueue = [
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    ''
-]
 var source = new EventSource('/connect/');
+let userID = window.prompt("Please enter your username.");
+let updating = false;
+let updateID = 0;
 source.onmessage = function(e) {
-    console.log(JSON.parse(e.data));
-    results = JSON.parse(e.data);
-    for (i = 9; i >= 0; i--){
-        document.getElementById('r'+i).innerHTML = results['result'+i];
+    readMsg(e);
+}
+function createMsg(){
+    let result = String(eval(dispStack)).substr(0, 12)
+    let entry = String(dispStack + "=" + result);
+    if (updating){
+        console.log('updatemsg');
+        fetch('http://localhost:8080/update/', {
+            method: 'POST',
+            body: JSON.stringify({
+                messageID: updateID,
+                userID: userID,
+                entry: entry
+            }),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        updating = false;
+        updateID = 0;
+    } else {
+        console.log('createmsg');
+        fetch('http://localhost:8080/create/', {
+            method: 'POST',
+            body: JSON.stringify({
+                userID: userID,
+                entry: entry
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     }
 
-};
-
-function clientMsg(){
-    var msg = String(dispStack + "=" + eval(dispStack));
-    console.log(msg);
-    fetch('https://calccrulator.herokuapp.com/clientMsg/', {
-        method: 'POST',
-        body: msg
-    })
-        .then(console.log(msg))
-    dispStack = eval(dispStack);
+    dispStack = result;
     document.getElementById('screen').innerHTML = dispStack;
 }
-function push(s){
-    if (dispStack =='0'){
+function readMsg(e){
+    console.log(JSON.parse(e.data));
+    let data = JSON.parse(e.data);
+    for (let i=0;i<=9;i++){
+        document.getElementById('row'+i+'messageID').innerHTML = data[i]['messageID'];
+        document.getElementById('row'+i+'timestamp').innerHTML = data[i]['timestamp'].substring(11,16);
+        document.getElementById('row'+i+'userID').innerHTML = data[i]['userID'];
+        document.getElementById('row'+i+'entry').innerHTML = data[i]['entry'];
+    }
+};
+function updateMsg(rowID){
+    console.log("updatemsg");
+    updating = true;
+    updateID = parseInt(document.getElementById('row'+rowID+'messageID').innerHTML,10);
+
+    dispStack = document.getElementById('row'+rowID+'entry').innerHTML.split('=')[0];
+    document.getElementById('screen').innerHTML = dispStack;
+}
+function deleteMsg(rowID){
+    console.log("deletemsg")
+    console.log(document.getElementById('row'+rowID+'messageID').innerHTML)
+    fetch('http://localhost:8080/delete/', {
+        method: 'POST',
+        body: JSON.stringify({
+            messageID: parseInt(document.getElementById('row'+rowID+'messageID').innerHTML,10)
+        }),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+}
+function push(s) {
+    // For a straightforward 'backspace' functionality, implment a stack and later pop() to delete last character
+    if (dispStack == '0') {
         dispStack = s;
+    } else if (dispStack.length == 12){
+        // do nothing
+        console.log("Do nothing");
     } else {
         dispStack += s;
     }
-    document.getElementById('screen').innerHTML = dispStack.substring(0,9);
+    document.getElementById('screen').innerHTML = dispStack;
 }
 function pop(){
     dispStack = dispStack.slice(0, dispStack.length - 1);
@@ -50,5 +94,7 @@ function pop(){
 }
 function cls(){
     dispStack = '';
+    updating = false;
+    updateID = 0;
     document.getElementById('screen').innerHTML = '0';
 }

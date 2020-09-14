@@ -1,34 +1,20 @@
 package main
 
 import (
+	"calCRUDlator/crudsql"
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 )
 
-type recentMessages struct {
-	Result0 			string		`json:"result0"`
-	Result1 			string		`json:"result1"`
-	Result2 			string		`json:"result2"`
-	Result3 			string		`json:"result3"`
-	Result4 			string		`json:"result4"`
-	Result5 			string		`json:"result5"`
-	Result6 			string		`json:"result6"`
-	Result7 			string		`json:"result7"`
-	Result8 			string		`json:"result8"`
-	Result9 			string		`json:"result9"`
-}
-
 type Broker struct {
-	clients 			map[chan string]bool
-	newClients 			chan chan string
-	defunctClients 		chan chan string
-	messages 			chan string
-	rM recentMessages
+	clients        map[chan string]bool
+	newClients     chan chan string
+	defunctClients chan chan string
+	messages       chan string
+	sqldriver      crudsql.Crudsql
 }
 
 func (b *Broker) Start() {
@@ -40,20 +26,24 @@ func (b *Broker) Start() {
 			select {
 
 			case s := <-b.newClients:
-
+				// First put our new client on a list of who to update...
 				b.clients[s] = true
 				log.Println("Added new client")
-				res, _ := json.Marshal(b.rM)
-				s <- string(res)
+				// ...then send them their initial update to populate the results area
+				b.sqldriver.ReadMsg()
+				fmt.Println(b.sqldriver.MsgJSON)
+
+				s <- string(b.sqldriver.MsgJSON)
 
 			case s := <-b.defunctClients:
 
+				// Take disconnected client off the list
 				delete(b.clients, s)
 				close(s)
 				log.Println("Removed client")
 
 			case msg := <-b.messages:
-
+				// As a new message enters the channel, broadcast it out to each of our clients
 				for s := range b.clients {
 
 					s <- msg
@@ -76,11 +66,11 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	b.newClients <- messageChan
 
-	notify := w.(http.CloseNotifier).CloseNotify()
+	notify2 := r.Context()
 	go func() {
-		<-notify
+		<-notify2.Done()
 		b.defunctClients <- messageChan
-		log.Println("HTTP connection just closed.")
+		fmt.Println("Client is done. DONE.")
 	}()
 
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -90,7 +80,9 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	for {
 		msg, open := <-messageChan
-		if !open {break}
+		if !open {
+			break
+		}
 
 		fmt.Fprintf(w, "data: %s\n\n", msg)
 
@@ -100,31 +92,74 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println("Finished HTTP request at ", r.URL.Path)
 }
 
-func (b *Broker) clientMsg(w http.ResponseWriter, r *http.Request){
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
+func (b *Broker) createMsg(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	in, err := ioutil.ReadAll(r.Body)
-	if err != nil{
-		panic(err)
+	type creating struct {
+		UserID string
+		Entry  string
 	}
-	b.newMsg(string(in))
-	res, _ := json.Marshal(b.rM)
-	b.messages <- string(res)
+	var c creating
+
+	err := json.NewDecoder(r.Body).Decode(&c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	log.Println(c)
+	b.sqldriver.CreateMsg(c.UserID, c.Entry)
+	b.sqldriver.ReadMsg()
+	b.messages <- string(b.sqldriver.MsgJSON)
 }
 
-func (b *Broker) newMsg (n string){
-	b.rM.Result9 = b.rM.Result8
-	b.rM.Result8 = b.rM.Result7
-	b.rM.Result7 = b.rM.Result6
-	b.rM.Result6 = b.rM.Result5
-	b.rM.Result5 = b.rM.Result4
-	b.rM.Result4 = b.rM.Result3
-	b.rM.Result3 = b.rM.Result2
-	b.rM.Result2 = b.rM.Result1
-	b.rM.Result1 = b.rM.Result0
-	b.rM.Result0 = n
-	fmt.Println("New eentry"+n)
+func (b *Broker) readMsg(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "applications/json")
+	b.sqldriver.ReadMsg()
+	fmt.Fprintf(w, string(b.sqldriver.MsgJSON))
+}
+
+func (b *Broker) updateMsg(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	type creating struct {
+		MessageID uint
+		UserID    string
+		Entry     string
+	}
+	var c creating
+
+	err := json.NewDecoder(r.Body).Decode(&c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	b.sqldriver.UpdateMsg(c.MessageID, c.UserID, c.Entry)
+	log.Println(c.MessageID, c.UserID, c.Entry)
+	b.sqldriver.ReadMsg()
+	b.messages <- string(b.sqldriver.MsgJSON)
+}
+
+func (b *Broker) deleteMsg(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	type creating struct {
+		MessageID uint
+	}
+	var c creating
+
+	err := json.NewDecoder(r.Body).Decode(&c)
+	fmt.Println(err)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	b.sqldriver.DeleteMsg(c.MessageID)
+	log.Println(c)
+	b.sqldriver.ReadMsg()
+	b.messages <- string(b.sqldriver.MsgJSON)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +175,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	t.Execute(w, "boss")
+	t.Execute(w, "Template Completed")
 
 	log.Println("Finished HTTP request at", r.URL.Path)
 }
@@ -152,24 +187,19 @@ func main() {
 		make(chan (chan string)),
 		make(chan (chan string)),
 		make(chan string),
-		recentMessages{
-			Result0: "",
-			Result1: "",
-			Result2: "",
-			Result3: "",
-			Result4: "",
-			Result5: "",
-			Result6: "",
-			Result7: "",
-			Result8: "",
-			Result9: "",
-		},
+		crudsql.Crudsql{},
 	}
+
+	b.sqldriver.GetConnection("yourname", "yourpassword", "postgres")
 
 	b.Start()
 	http.Handle("/", http.HandlerFunc(handler))
 	http.Handle("/connect/", b)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./"))))
-	http.HandleFunc("/clientMsg/", b.clientMsg)
-	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
+	http.HandleFunc("/create/", b.createMsg)
+	http.HandleFunc("/read/", b.readMsg)
+	http.HandleFunc("/update/", b.updateMsg)
+	http.HandleFunc("/delete/", b.deleteMsg)
+	http.ListenAndServe(":8080", nil) // local development
+	//http.ListenAndServe(":"+os.Getenv("PORT"), nil) // heroku hosting
 }
