@@ -3,7 +3,7 @@ let source = new EventSource('/connect/');
 let userID = window.prompt("Please enter your name.");
 let updating = false;
 let updateID = 0;
-let url = "https://calcrudlator.herokuapp.com";
+let url = "http://calcrudlator.herokuapp.com";
 //let url = "http://localhost:8080";
 source.onmessage = function(e) {
     readMsg(e);
