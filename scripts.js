@@ -10,7 +10,7 @@ function createMsg(){
     let result = String(eval(dispStack)).substr(0, 12)
     let entry = String(dispStack + "=" + result);
     if (updating){
-        fetch('http://localhost:8080/update/', {
+        fetch('calcrudlator.herokuapp.com/update/', {
             method: 'POST',
             body: JSON.stringify({
                 messageID: updateID,
@@ -24,7 +24,7 @@ function createMsg(){
         updating = false;
         updateID = 0;
     } else {
-        fetch('http://localhost:8080/create/', {
+        fetch('calcrudlator.herokuapp.com/create/', {
             method: 'POST',
             body: JSON.stringify({
                 userID: userID,
@@ -58,7 +58,7 @@ function updateMsg(rowID){
 }
 function deleteMsg(rowID){
     console.log(document.getElementById('row'+rowID+'messageID').innerHTML)
-    fetch('http://localhost:8080/delete/', {
+    fetch('calcrudlator.herokuapp.com/delete/', {
         method: 'POST',
         body: JSON.stringify({
             messageID: parseInt(document.getElementById('row'+rowID+'messageID').innerHTML,10)

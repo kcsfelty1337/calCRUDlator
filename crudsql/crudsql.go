@@ -99,9 +99,9 @@ func (c *Crudsql) DeleteMsg(messageID uint) string {
 	return ("Row deleted")
 }
 func (c *Crudsql) GetConnection(username string, password string, dbname string) {
-	conString := fmt.Sprintf("user=%1s password=%2s dbname=%3s sslmode=disable", username, password, dbname) // for local development
+	//conString := fmt.Sprintf("user=%1s password=%2s dbname=%3s sslmode=require", username, password, dbname) // for local development
 	//conString := fmt.Sprintf("user=%1s password=%2s dbname=%3s sslmode=disable", username, password, os.Getenv("DATABASE_URL")) // for local development
-	connect, err := pgx.Connect(context.Background(), conString)
+	connect, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
