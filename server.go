@@ -194,20 +194,13 @@ func main() {
 
 	b.sqldriver.GetConnection("yourname", "yourpassword", "postgres")
 
-	fmt.Println(os.Getenv("PORT"))
-	fmt.Println(os.Getenv("DATABSE_URL"))
 	b.Start()
 	http.Handle("/", http.HandlerFunc(handler))
 	http.Handle("/connect/", b)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./"))))
-
-	fmt.Println(http.Dir("./"))
-	path, _ := os.Getwd()
-	fmt.Println(path)
 	http.HandleFunc("/create/", b.createMsg)
 	http.HandleFunc("/read/", b.readMsg)
 	http.HandleFunc("/update/", b.updateMsg)
 	http.HandleFunc("/delete/", b.deleteMsg)
-	//http.ListenAndServe(":8080", nil) // local development
-	http.ListenAndServe(":"+os.Getenv("PORT"), nil) // heroku hosting
+	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 }
