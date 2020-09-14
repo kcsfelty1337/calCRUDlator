@@ -1,6 +1,6 @@
 var dispStack = '';
 var source = new EventSource('/connect/');
-let userID = window.prompt("Please enter your username.");
+let userID = window.prompt("Please enter your name.");
 let updating = false;
 let updateID = 0;
 source.onmessage = function(e) {
