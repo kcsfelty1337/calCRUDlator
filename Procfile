@@ -1,1 +1,1 @@
-web: calcCRUlator
+web: calCRUDlator

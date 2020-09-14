@@ -99,14 +99,14 @@ func (c *Crudsql) DeleteMsg(messageID uint) string {
 	return ("Row deleted")
 }
 func (c *Crudsql) GetConnection(username string, password string, dbname string) {
-	//con, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL")) // for Heroku hosting
+	con, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL")) // for Heroku hosting
 
-	connectionString := fmt.Sprintf("user=%1s password=%2s dbname=%3s sslmode=disable", username, password, dbname) // for local development
-	connect, err := pgx.Connect(context.Background(), connectionString)
+	//con := fmt.Sprintf("user=%1s password=%2s dbname=%3s sslmode=disable", username, password, dbname) // for local development
+	//connect, err := pgx.Connect(context.Background(), con)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
 	}
-	c.Con = *connect
+	c.Con = *con
 }

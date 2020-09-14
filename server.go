@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 )
 
 type Broker struct {
@@ -200,6 +201,6 @@ func main() {
 	http.HandleFunc("/read/", b.readMsg)
 	http.HandleFunc("/update/", b.updateMsg)
 	http.HandleFunc("/delete/", b.deleteMsg)
-	http.ListenAndServe(":8080", nil) // local development
-	//http.ListenAndServe(":"+os.Getenv("PORT"), nil) // heroku hosting
+	//http.ListenAndServe(":8080", nil) // local development
+	http.ListenAndServe(":"+os.Getenv("PORT"), nil) // heroku hosting
 }
