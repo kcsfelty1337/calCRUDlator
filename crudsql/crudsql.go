@@ -99,8 +99,8 @@ func (c *Crudsql) DeleteMsg(messageID uint) string {
 	return ("Row deleted")
 }
 func (c *Crudsql) GetConnection(username string, password string, dbname string) {
-	conString := fmt.Sprintf("user=%1s password=%2s dbname=%3s sslmode=disable", username, password, dbname) // for local development
-
+	//conString := fmt.Sprintf("user=%1s password=%2s dbname=%3s sslmode=disable", username, password, dbname) // for local development
+	conString := os.Getenv("DATABSE_URL")
 	connect, err := pgx.Connect(context.Background(), conString)
 
 	if err != nil {

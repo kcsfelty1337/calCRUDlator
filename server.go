@@ -193,7 +193,6 @@ func main() {
 	}
 
 	b.sqldriver.GetConnection("yourname", "yourpassword", "postgres")
-
 	b.Start()
 	http.Handle("/", http.HandlerFunc(handler))
 	http.Handle("/connect/", b)
