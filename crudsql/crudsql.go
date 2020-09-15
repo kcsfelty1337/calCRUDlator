@@ -62,7 +62,6 @@ func (c *Crudsql) ReadMsg() {
 	}
 	a, _ := json.Marshal(c.Msg)
 	c.MsgJSON = a
-	fmt.Println(string(c.MsgJSON))
 	defer rows.Close()
 
 	if err != nil {

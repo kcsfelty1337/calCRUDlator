@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 )
 
 type Broker struct {
@@ -33,7 +32,6 @@ func (b *Broker) Start() {
 				log.Println("Added new client")
 				// ...then send them their initial update to populate the results area
 				b.sqldriver.ReadMsg()
-				fmt.Println(b.sqldriver.MsgJSON)
 
 				s <- string(b.sqldriver.MsgJSON)
 
@@ -72,7 +70,7 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		<-notify2.Done()
 		b.defunctClients <- messageChan
-		fmt.Println("Client is done. DONE.")
+		log.Println("Client is done. DONE.")
 	}()
 
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -103,7 +101,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	t, err := template.ParseFiles("index.html")
 	if err != nil {
-		fmt.Println(err)
 		log.Fatal("Please remember to have an index.html!")
 
 	}
@@ -132,7 +129,6 @@ func (b *Broker) entry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(strings.TrimPrefix(r.URL.Path, "/api/entry/"))
 	switch r.Method {
 	case "POST": // Create
 		b.sqldriver.CreateMsg(c.UserID, c.Entry)
@@ -140,7 +136,6 @@ func (b *Broker) entry(w http.ResponseWriter, r *http.Request) {
 	case "GET": // Read
 		// Unused because server will send reads instead of clients requesting them
 		b.sqldriver.ReadMsg()
-		fmt.Fprintf(w, string(b.sqldriver.MsgJSON))
 
 	case "PUT": // Update
 		b.sqldriver.UpdateMsg(c.MessageID, c.UserID, c.Entry)
