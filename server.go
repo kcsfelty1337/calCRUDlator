@@ -162,8 +162,7 @@ func main() {
 		make(chan string),
 		crudsql.Crudsql{},
 	}
-	conString := os.Getenv("DATABSE_URL")
-	b.sqldriver.GetConnection(conString)
+	b.sqldriver.GetConnection()
 	b.Start()
 	http.Handle("/", http.HandlerFunc(handler))
 	http.Handle("/connect/", b)

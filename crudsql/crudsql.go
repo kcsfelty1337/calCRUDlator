@@ -96,10 +96,10 @@ func (c *Crudsql) DeleteMsg(messageID uint) string {
 	if commandTag.RowsAffected() != 1 {
 		return ("No row to delete!")
 	}
-	return ("Row deleted")
+	return "Row deleted"
 }
-func (c *Crudsql) GetConnection(conString string) {
-	connect, err := pgx.Connect(context.Background(), conString)
+func (c *Crudsql) GetConnection() {
+	connect, err := pgx.Connect(context.Background(), os.Getenv("DATABSE_URL"))
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
