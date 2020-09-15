@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type Broker struct {
@@ -93,76 +94,6 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println("Finished HTTP request at ", r.URL.Path)
 }
 
-func (b *Broker) createMsg(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	type creating struct {
-		UserID string
-		Entry  string
-	}
-	var c creating
-
-	err := json.NewDecoder(r.Body).Decode(&c)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	log.Println(c)
-	b.sqldriver.CreateMsg(c.UserID, c.Entry)
-	b.sqldriver.ReadMsg()
-	b.messages <- string(b.sqldriver.MsgJSON)
-}
-
-func (b *Broker) readMsg(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "applications/json")
-	b.sqldriver.ReadMsg()
-	fmt.Fprintf(w, string(b.sqldriver.MsgJSON))
-}
-
-func (b *Broker) updateMsg(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	type creating struct {
-		MessageID uint
-		UserID    string
-		Entry     string
-	}
-	var c creating
-
-	err := json.NewDecoder(r.Body).Decode(&c)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	b.sqldriver.UpdateMsg(c.MessageID, c.UserID, c.Entry)
-	log.Println(c.MessageID, c.UserID, c.Entry)
-	b.sqldriver.ReadMsg()
-	b.messages <- string(b.sqldriver.MsgJSON)
-}
-
-func (b *Broker) deleteMsg(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	type creating struct {
-		MessageID uint
-	}
-	var c creating
-
-	err := json.NewDecoder(r.Body).Decode(&c)
-	fmt.Println(err)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	b.sqldriver.DeleteMsg(c.MessageID)
-	log.Println(c)
-	b.sqldriver.ReadMsg()
-	b.messages <- string(b.sqldriver.MsgJSON)
-}
-
 func handler(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Path != "/" {
@@ -182,6 +113,46 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Finished HTTP request at", r.URL.Path)
 }
 
+func (b *Broker) entry(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	type creating struct {
+		MessageID uint
+		UserID    string
+		Entry     string
+	}
+	var c creating
+
+	err := json.NewDecoder(r.Body).Decode(&c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println(strings.TrimPrefix(r.URL.Path, "/api/entry/"))
+	switch r.Method {
+	case "POST": // Create
+		b.sqldriver.CreateMsg(c.UserID, c.Entry)
+
+	case "GET": // Read
+		// Unused because server will send reads instead of clients requesting them
+		b.sqldriver.ReadMsg()
+		fmt.Fprintf(w, string(b.sqldriver.MsgJSON))
+
+	case "PUT": // Update
+		b.sqldriver.UpdateMsg(c.MessageID, c.UserID, c.Entry)
+
+	case "DELETE": // Delete
+		b.sqldriver.DeleteMsg(c.MessageID)
+	}
+
+	b.sqldriver.ReadMsg()
+	b.messages <- string(b.sqldriver.MsgJSON)
+}
+
 func main() {
 
 	b := &Broker{
@@ -197,9 +168,6 @@ func main() {
 	http.Handle("/", http.HandlerFunc(handler))
 	http.Handle("/connect/", b)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./"))))
-	http.HandleFunc("/create/", b.createMsg)
-	http.HandleFunc("/read/", b.readMsg)
-	http.HandleFunc("/update/", b.updateMsg)
-	http.HandleFunc("/delete/", b.deleteMsg)
+	http.HandleFunc("/api/entry/", b.entry)
 	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 }

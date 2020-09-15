@@ -3,40 +3,39 @@ let source = new EventSource('/connect/');
 let userID = window.prompt("Please enter your name.");
 let updating = false;
 let updateID = 0;
-let url = "http://calcrudlator.herokuapp.com";
-//let url = "http://localhost:8080";
+//let url = "http://calcrudlator.herokuapp.com";
+let url = "http://localhost:8080";
+
 source.onmessage = function(e) {
     readMsg(e);
+}
+function routeCreateUpdate(){
+    if (!updating){
+        createMsg()
+    } else {
+        updateMsg()
+    }
+}
+function prepareUpdate(rowID){
+    updating = true;
+    updateID = parseInt(document.getElementById('row'+rowID+'messageID').innerHTML,10);
+    dispStack = document.getElementById('row'+rowID+'entry').innerHTML.split('=')[0];
+    document.getElementById('screen').innerHTML = dispStack;
 }
 function createMsg(){
     let result = String(eval(dispStack)).substr(0, 12)
     let entry = String(dispStack + "=" + result);
-    if (updating){
-        fetch(url+'/update/', {
-            method: 'POST',
-            body: JSON.stringify({
-                messageID: updateID,
-                userID: userID,
-                entry: entry
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-        updating = false;
-        updateID = 0;
-    } else {
-        fetch(url+'/create/', {
-            method: 'POST',
-            body: JSON.stringify({
-                userID: userID,
-                entry: entry
-            }),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-    }
+
+    fetch(url+'/api/entry/', {
+        method: 'POST',
+        body: JSON.stringify({
+            userID: userID,
+            entry: entry
+        }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
 
     dispStack = result;
     document.getElementById('screen').innerHTML = dispStack;
@@ -52,16 +51,26 @@ function readMsg(e){
     }
 }
 function updateMsg(rowID){
-    updating = true;
-    updateID = parseInt(document.getElementById('row'+rowID+'messageID').innerHTML,10);
-
-    dispStack = document.getElementById('row'+rowID+'entry').innerHTML.split('=')[0];
-    document.getElementById('screen').innerHTML = dispStack;
+    let result = String(eval(dispStack)).substr(0, 12)
+    let entry = String(dispStack + "=" + result);
+    fetch(url+'/api/entry/'+rowID, {
+        method: 'PUT',
+        body: JSON.stringify({
+            messageID: updateID,
+            userID: userID,
+            entry: entry
+        }),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+    updating = false;
+    updateID = 0;
 }
 function deleteMsg(rowID){
     console.log(document.getElementById('row'+rowID+'messageID').innerHTML)
-    fetch(url+'/delete/', {
-        method: 'POST',
+    fetch(url+'/api/entry/'+rowID, {
+        method: 'DELETE',
         body: JSON.stringify({
             messageID: parseInt(document.getElementById('row'+rowID+'messageID').innerHTML,10)
         }),

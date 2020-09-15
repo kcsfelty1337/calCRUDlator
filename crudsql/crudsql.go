@@ -99,7 +99,7 @@ func (c *Crudsql) DeleteMsg(messageID uint) string {
 	return ("Row deleted")
 }
 func (c *Crudsql) GetConnection(conString string) {
-	connect, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	connect, err := pgx.Connect(context.Background(), conString)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)

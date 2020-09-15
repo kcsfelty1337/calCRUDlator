@@ -82,6 +82,9 @@ body{
 .resultEntry{
     width: 200px;
 }
+.messageID{
+    visibility: hidden;
+}
 #e{
     height: 275px;
     width: 230px;
