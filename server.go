@@ -134,7 +134,8 @@ func (b *Broker) entry(w http.ResponseWriter, r *http.Request) {
 		b.sqldriver.CreateMsg(c.UserID, c.Entry)
 
 	case "GET": // Read
-		// Unused because server will send reads instead of clients requesting them
+		// Unused: server will send reads instead of clients requesting them, but this is where
+		//     a more robust API could ReadMsg(20) to return 20 most recent entries, etc.
 		b.sqldriver.ReadMsg()
 
 	case "PUT": // Update
